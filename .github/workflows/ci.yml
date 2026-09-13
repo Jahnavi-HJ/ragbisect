@@ -5,9 +5,14 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy: { matrix: { python: ["3.12", "3.13"] } }
+    strategy:
+      fail-fast: false
+      matrix: { python: ["3.12", "3.13"] }
+    env:
+      UV_PYTHON: ${{ matrix.python }}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - run: uv sync --python ${{ matrix.python }}
+      - run: uv sync
+      - run: uv run python -c "import sys; print(sys.version.split()[0])"
       - run: uv run pytest -q
