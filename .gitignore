@@ -1,9 +1,9 @@
-__pycache__/
-*.pyc
-.venv/
-dist/
-.ragbisect/
-.pytest_cache/
 *.egg-info/
+*.pyc
 .DS_Store
 .contextpull-eval/
+.pytest_cache/
+.ragbisect/
+.venv/
+__pycache__/
+dist/
