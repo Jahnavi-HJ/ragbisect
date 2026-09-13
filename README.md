@@ -1,6 +1,8 @@
 # stagewise
 
-Stage-by-stage diagnostics for RAG pipelines.
+Stage-by-stage diagnostics for RAG pipelines, and the benchmark harness for [ContextPull](https://github.com/mi2arun/contextpull).
+
+stagewise and ContextPull are one project in two packages, kept apart on purpose. ContextPull is the retrieval server; stagewise is the neutral instrument that measures it against bm25, dense and hybrid pipelines on the same self-built eval set. stagewise has no dependency on ContextPull and works on any pipeline you already have.
 
 Other tools score your pipeline end to end and tell you it is bad. stagewise
 scores **retrieval**, **ranking** and **generation** separately, on an eval set
@@ -77,10 +79,6 @@ stagewise run --corpus ./chunks.jsonl --adapter ./p.py:R --k 10 --dump-misses mi
 Everything lands in `.stagewise/`: the cache, `chunks.jsonl`, and
 `questions.jsonl`. Hand-check the questions. If they are bad, everything
 downstream is worthless.
-
-## Companion project
-
-[ContextPull](https://github.com/mi2arun/contextpull) is the pull-based retrieval server this tool measures; its agentic configuration joins the same table in stagewise's M3.
 
 ## Status
 
