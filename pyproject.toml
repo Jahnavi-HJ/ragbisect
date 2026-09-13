@@ -1,0 +1,36 @@
+[project]
+name = "stagewise"
+version = "0.1.0"
+description = "Stage-by-stage diagnostics for RAG pipelines: builds its own eval set, scores retrieval, ranking and generation separately, and tells you which stage is the bottleneck."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+authors = [{ name = "Arunkumar S" }]
+keywords = ["rag", "retrieval", "evaluation", "recall", "bm25", "diagnostics"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Topic :: Software Development :: Testing",
+]
+# Deliberately zero runtime dependencies. stagewise installs alongside the
+# user's pipeline; every dependency is a potential version conflict there.
+dependencies = []
+
+[project.scripts]
+stagewise = "stagewise.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/mi2arun/stagewise"
+Repository = "https://github.com/mi2arun/stagewise"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/stagewise"]
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
