@@ -10,16 +10,30 @@ def _fmt(x: float | None) -> str:
     return "  —  " if x is None else f"{x:.3f}"
 
 
-def _row(label: str, s: StageScores, k: int, indent: int = 0) -> str:
+def _num(x: float | None, digits: int = 0) -> str:
+    if x is None:
+        return "—"
+    return f"{x:,.{digits}f}"
+
+
+def _row(label: str, s: StageScores, k: int, indent: int = 0, cost: tuple[str, str] = ("", "")) -> str:
     faith = _fmt(s.faithfulness) if s.faithfulness is not None else "  n/a"
-    return f"{' ' * indent}{label:<34.34}{_fmt(s.recall):>10}{_fmt(s.mrr):>9}{_fmt(s.ndcg_given_hit):>13}{faith:>9}{s.n:>6}"
+    return (
+        f"{' ' * indent}{label:<34.34}{_fmt(s.recall):>10}{_fmt(s.mrr):>9}{_fmt(s.ndcg_given_hit):>13}{faith:>9}"
+        f"{s.n:>6}{_num(s.ms_per_query):>9}{cost[0]:>9}{cost[1]:>8}"
+    )
 
 
 def stage_table(configs: list[ConfigResult], k: int, show_shapes: bool = True) -> str:
-    lines = [f"{'config':<34}{f'recall@{k}':>10}{f'mrr@{k}':>9}{f'ndcg@{k}|hit':>13}{'faith':>9}{'n':>6}"]
+    """Stage metrics plus cost per query: wall ms for every config, model
+    tokens and tool calls when the adapter reports them (agentic configs)."""
+    lines = [
+        f"{'config':<34}{f'recall@{k}':>10}{f'mrr@{k}':>9}{f'ndcg@{k}|hit':>13}{'faith':>9}{'n':>6}{'ms/q':>9}{'tok/q':>9}{'calls/q':>8}"
+    ]
     lines.append("-" * len(lines[0]))
     for c in configs:
-        lines.append(_row(c.name, c.overall, k))
+        cost = (_num(c.tokens_per_query()), _num(c.calls_per_query(), 1))
+        lines.append(_row(c.name, c.overall, k, cost=cost))
         if show_shapes:
             for shape, s in c.by_shape().items():
                 lines.append(_row(shape, s, k, indent=2))

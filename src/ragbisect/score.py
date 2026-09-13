@@ -13,6 +13,7 @@ the best achievable score (1.0) is the bottleneck. Report the top one.
 from __future__ import annotations
 
 import math
+import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
@@ -58,6 +59,7 @@ class QueryResult:
     gold: list[str]
     retrieved: list[str]
     k: int
+    ms: float = 0.0
 
     @property
     def recall(self) -> float:
@@ -84,6 +86,7 @@ class StageScores:
     ndcg_given_hit: float | None  # None when nothing was retrieved at all
     faithfulness: float | None = None
     n_generated: int = 0
+    ms_per_query: float = 0.0
 
 
 @dataclass
@@ -93,6 +96,18 @@ class ConfigResult:
     results: list[QueryResult]
     faithfulness: dict[str, bool] = field(default_factory=dict)  # qid -> supported?
     errors: int = 0
+    # Optional adapter-reported cost: {"tokens_in", "tokens_out", "tool_calls", "queries", "usd"?}
+    stats: dict = field(default_factory=dict)
+
+    def tokens_per_query(self) -> float | None:
+        q = self.stats.get("queries") or 0
+        if not q:
+            return None
+        return (self.stats.get("tokens_in", 0) + self.stats.get("tokens_out", 0)) / q
+
+    def calls_per_query(self) -> float | None:
+        q = self.stats.get("queries") or 0
+        return (self.stats.get("tool_calls", 0) / q) if q else None
 
     def _agg(self, rs: list[QueryResult]) -> StageScores:
         if not rs:
@@ -106,6 +121,7 @@ class ConfigResult:
             ndcg_given_hit=(sum(r.ndcg for r in hits) / len(hits)) if hits else None,
             faithfulness=(sum(faith) / len(faith)) if faith else None,
             n_generated=len(faith),
+            ms_per_query=sum(r.ms for r in rs) / len(rs),
         )
 
     @property
@@ -133,33 +149,52 @@ def run_config(
     workers: int = 1,
     progress: Callable[[int, int], None] | None = None,
 ) -> ConfigResult:
-    """Run every question through a retriever. Sequential by default: user
-    adapters are not guaranteed thread-safe."""
+    """Run every question through a retriever.
+
+    Sequential by default: user adapters are not guaranteed thread-safe. An
+    adapter may declare ``concurrency = N`` (class or instance attribute) to
+    opt in to N parallel queries. Wall time per query is recorded for every
+    config; an adapter may also expose ``stats()`` returning token and tool
+    call totals, which the report turns into per-query columns.
+    """
     out: list[QueryResult | None] = [None] * len(questions)
     errors = 0
+    workers = max(workers, int(getattr(retriever, "concurrency", 1) or 1))
 
     def one(i: int) -> None:
         q = questions[i]
+        t0 = time.perf_counter()
         retrieved = [str(c) for c in retriever.retrieve(q.q, k)]
-        out[i] = QueryResult(q.id, q.shape, list(q.gold_chunk_ids), retrieved, k)
+        out[i] = QueryResult(q.id, q.shape, list(q.gold_chunk_ids), retrieved, k, ms=(time.perf_counter() - t0) * 1000)
+
+    def safe(i: int) -> bool:
+        try:
+            one(i)
+            return True
+        except Exception:
+            return False
 
     done = 0
     if workers > 1:
         with ThreadPoolExecutor(max_workers=workers) as pool:
-            for _ in pool.map(one, range(len(questions))):
+            for ok in pool.map(safe, range(len(questions))):
+                errors += not ok
                 done += 1
                 if progress:
                     progress(done, len(questions))
     else:
         for i in range(len(questions)):
-            try:
-                one(i)
-            except Exception:
-                errors += 1
+            errors += not safe(i)
             done += 1
             if progress:
                 progress(done, len(questions))
-    return ConfigResult(name, k, [r for r in out if r is not None], errors=errors)
+    stats = {}
+    if hasattr(retriever, "stats"):
+        try:
+            stats = dict(retriever.stats() or {})
+        except Exception:
+            stats = {}
+    return ConfigResult(name, k, [r for r in out if r is not None], errors=errors, stats=stats)
 
 
 JUDGE_SYSTEM = """You are a strict grader. You will see a question, some context passages, and an answer written from those passages.

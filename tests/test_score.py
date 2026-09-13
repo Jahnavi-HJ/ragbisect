@@ -55,3 +55,29 @@ def test_by_shape_and_conditional_ndcg():
     assert shapes["conceptual"].recall == 0.5
     assert shapes["conceptual"].ndcg_given_hit == 1.0  # the miss is excluded from ranking
     assert math.isclose(shapes["exact_lookup"].ndcg_given_hit, 1 / math.log2(3))
+
+
+def test_run_config_records_ms_stats_and_concurrency():
+    from ragbisect.generate import Question
+    from ragbisect.report import stage_table
+    from ragbisect.score import run_config
+
+    class Agent:
+        concurrency = 4
+
+        def __init__(self):
+            self.calls = 0
+
+        def retrieve(self, q, k):
+            self.calls += 1
+            return ["g"]
+
+        def stats(self):
+            return {"tokens_in": 1000, "tokens_out": 100, "tool_calls": 30, "queries": self.calls}
+
+    qs = [Question(f"q{i}", "what?", "conceptual", ["g"]) for i in range(10)]
+    c = run_config("agent", Agent(), qs, 5)
+    assert c.overall.recall == 1.0 and c.overall.ms_per_query >= 0
+    assert c.tokens_per_query() == 110.0 and c.calls_per_query() == 3.0
+    table = stage_table([c], 5, show_shapes=False)
+    assert "tok/q" in table.splitlines()[0] and "110" in table.splitlines()[2] and "3.0" in table.splitlines()[2]

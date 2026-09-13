@@ -32,6 +32,8 @@ class MyRetriever:
         """Return chunk IDs, most relevant first."""
 ```
 
+Optional extras on the adapter, all read if present: `generate(query, chunk_ids) -> str` to have faithfulness judged; `stats() -> dict` with `tokens_in`, `tokens_out`, `tool_calls`, `queries` (and `usd`) to fill the cost columns; a `concurrency = N` attribute to allow N parallel queries. Wall time per query is recorded for every config. `--sample N` evaluates a seeded subset, for expensive adapters.
+
 Then point ragbisect at your corpus and your adapter:
 
 ```sh

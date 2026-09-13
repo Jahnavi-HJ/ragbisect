@@ -154,6 +154,12 @@ def cmd_run(args: argparse.Namespace) -> int:
     if not questions:
         _eprint("no questions generated; nothing to score")
         return 2
+    if args.sample and args.sample < len(questions):
+        import random
+
+        rng = random.Random(args.seed)
+        questions = sorted(rng.sample(questions, args.sample), key=lambda q: q.id)
+        _eprint(f"evaluating a seeded sample of {len(questions)} questions")
 
     known = set(chunk_text)
     unknown_gold = sum(1 for q in questions for g in q.gold_chunk_ids if g not in known)
@@ -202,6 +208,10 @@ def cmd_run(args: argparse.Namespace) -> int:
         line = comparison_line(primary, configs[1:])
         if line:
             print(line)
+    if primary is not None and primary.stats:
+        st = primary.stats
+        extra = f"; ≈ ${st['usd']:.2f}" if st.get("usd") else ""
+        print(f"adapter spend: {st.get('tokens_in', 0):,} in / {st.get('tokens_out', 0):,} out tokens, {st.get('tool_calls', 0)} tool calls over {st.get('queries', 0)} queries{extra}")
     if report:
         print()
         print(generation_notes(report))
@@ -257,6 +267,7 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--no-shapes", action="store_true", help="hide the per-shape breakdown rows")
     r.add_argument("--gen-sample", type=int, default=50, help="answers to judge for faithfulness if the adapter has generate() (default: 50; 0 disables)")
     r.add_argument("--dump-misses", metavar="FILE", help="write questions whose gold chunk was not retrieved, as JSONL")
+    r.add_argument("--sample", type=int, default=0, help="evaluate only a seeded random sample of N questions (for expensive adapters)")
     r.set_defaults(func=cmd_run)
     return p
 
