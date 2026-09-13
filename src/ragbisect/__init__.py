@@ -1,6 +1,6 @@
-"""stagewise — stage-by-stage diagnostics for RAG pipelines.
+"""ragbisect — stage-by-stage diagnostics for RAG pipelines.
 
-The only thing you must implement to use stagewise is the ``Retriever`` protocol:
+The only thing you must implement to use ragbisect is the ``Retriever`` protocol:
 
     class MyRetriever:
         def retrieve(self, query: str, k: int) -> list[str]:

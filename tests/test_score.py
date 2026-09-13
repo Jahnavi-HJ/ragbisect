@@ -1,6 +1,6 @@
 import math
 
-from stagewise.score import ConfigResult, QueryResult, localize, mrr_at_k, ndcg_at_k, recall_at_k
+from ragbisect.score import ConfigResult, QueryResult, localize, mrr_at_k, ndcg_at_k, recall_at_k
 
 
 def test_recall_binary_single_gold():

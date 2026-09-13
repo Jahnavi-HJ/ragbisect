@@ -121,7 +121,7 @@ class LLM:
         self,
         model: str = DEFAULT_MODEL,
         embed_model: str = DEFAULT_EMBED_MODEL,
-        cache_path: str | Path = ".stagewise/cache.sqlite",
+        cache_path: str | Path = ".ragbisect/cache.sqlite",
         temperature: float = 0.0,
         reasoning_effort: str | None = "low",
         timeout: float = 120.0,

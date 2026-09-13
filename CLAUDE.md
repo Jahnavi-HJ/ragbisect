@@ -1,4 +1,4 @@
-# stagewise — build spec
+# ragbisect — build spec (formerly stagewise; renamed 2026-09-13 to avoid the stagewise-io IDE)
 
 Drop this in the repo root as `CLAUDE.md` (or keep it as `SPEC.md` and reference it). It is the source of truth for what we're building and, more importantly, what we're not.
 
@@ -6,7 +6,7 @@ Drop this in the repo root as `CLAUDE.md` (or keep it as `SPEC.md` and reference
 
 ## What this is
 
-A diagnostic tool for RAG pipelines. The name is the thesis: other tools score the pipeline end to end, stagewise scores it stage by stage so it can tell you which one is broken. Point it at a document corpus and an existing retrieval pipeline; it generates its own evaluation set, measures each stage of the pipeline independently, and reports which stage is losing the most quality.
+A diagnostic tool for RAG pipelines. The name is the thesis: other tools score the pipeline end to end, ragbisect scores it stage by stage so it can tell you which one is broken. Point it at a document corpus and an existing retrieval pipeline; it generates its own evaluation set, measures each stage of the pipeline independently, and reports which stage is losing the most quality.
 
 It is a **measuring instrument**, not a RAG framework.
 
@@ -136,7 +136,7 @@ Fault localization rule: the stage with the largest gap between its score and th
 ### M3 — CLI
 
 ```
-stagewise run --corpus ./docs --adapter ./my_pipeline.py:MyRetriever
+ragbisect run --corpus ./docs --adapter ./my_pipeline.py:MyRetriever
 ```
 
 Prints the stage table and a one-line verdict. Nothing else.

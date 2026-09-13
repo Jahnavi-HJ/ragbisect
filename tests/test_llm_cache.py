@@ -3,8 +3,8 @@ from pathlib import Path
 
 import pytest
 
-import stagewise.llm as llm_mod
-from stagewise.llm import LLM, Usage, parse_model
+import ragbisect.llm as llm_mod
+from ragbisect.llm import LLM, Usage, parse_model
 
 
 def test_parse_model():

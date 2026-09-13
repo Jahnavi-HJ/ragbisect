@@ -2,7 +2,7 @@ __pycache__/
 *.pyc
 .venv/
 dist/
-.stagewise/
+.ragbisect/
 .pytest_cache/
 *.egg-info/
 .DS_Store

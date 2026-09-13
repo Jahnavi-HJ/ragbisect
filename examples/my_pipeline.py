@@ -5,18 +5,18 @@
 
 Run it with:
 
-    stagewise run --corpus ./docs --adapter examples/my_pipeline.py:MyRetriever
+    ragbisect run --corpus ./docs --adapter examples/my_pipeline.py:MyRetriever
 
-If the class constructor takes one positional argument, stagewise passes the
-chunk list (``list[stagewise.Chunk]`` with ``.id``, ``.text``, ``.source``) so
+If the class constructor takes one positional argument, ragbisect passes the
+chunk list (``list[ragbisect.Chunk]`` with ``.id``, ``.text``, ``.source``) so
 you can build an index over exactly the chunks the eval set refers to. If it
-takes none, stagewise calls it with no arguments and you own the index.
+takes none, ragbisect calls it with no arguments and you own the index.
 """
 
 from __future__ import annotations
 
-from stagewise import Chunk
-from stagewise.retrievers import BM25Retriever
+from ragbisect import Chunk
+from ragbisect.retrievers import BM25Retriever
 
 
 class MyRetriever:

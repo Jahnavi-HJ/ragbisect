@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from stagewise.corpus import Chunk, chunk_document, corpus_fingerprint, load_corpus, read_chunks_jsonl, split_text
+from ragbisect.corpus import Chunk, chunk_document, corpus_fingerprint, load_corpus, read_chunks_jsonl, split_text
 
 
 def test_split_respects_size_and_prefers_headings():

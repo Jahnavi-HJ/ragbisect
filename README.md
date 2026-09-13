@@ -1,10 +1,10 @@
-# stagewise
+# ragbisect
 
-Stage-by-stage diagnostics for RAG pipelines, and the benchmark harness for [ContextPull](https://github.com/mi2arun/contextpull).
+Bisect a RAG pipeline to find the broken stage. Stage-by-stage diagnostics for RAG pipelines, and the benchmark harness for [ContextPull](https://github.com/mi2arun/contextpull).
 
-stagewise and ContextPull are one project in two packages, kept apart on purpose. ContextPull is the retrieval server; stagewise is the neutral instrument that measures it against bm25, dense and hybrid pipelines on the same self-built eval set. stagewise has no dependency on ContextPull and works on any pipeline you already have.
+ragbisect (formerly stagewise) and ContextPull are one project in two packages, kept apart on purpose. ContextPull is the retrieval server; ragbisect is the neutral instrument that measures it against bm25, dense and hybrid pipelines on the same self-built eval set. ragbisect has no dependency on ContextPull and works on any pipeline you already have.
 
-Other tools score your pipeline end to end and tell you it is bad. stagewise
+Other tools score your pipeline end to end and tell you it is bad. ragbisect
 scores **retrieval**, **ranking** and **generation** separately, on an eval set
 it **builds itself from your corpus**, and tells you **which stage is losing the
 most quality**, and which built-in alternative would recover it.
@@ -14,7 +14,7 @@ It is a measuring instrument, not a RAG framework. Zero runtime dependencies.
 ## Install
 
 ```sh
-uv add --dev stagewise      # or: pip install stagewise
+uv add --dev ragbisect      # or: pip install ragbisect
 export OPENAI_API_KEY=...   # used for question generation, judging and the built-in dense config
 ```
 
@@ -32,10 +32,10 @@ class MyRetriever:
         """Return chunk IDs, most relevant first."""
 ```
 
-Then point stagewise at your corpus and your adapter:
+Then point ragbisect at your corpus and your adapter:
 
 ```sh
-stagewise run --corpus ./docs --adapter ./my_pipeline.py:MyRetriever
+ragbisect run --corpus ./docs --adapter ./my_pipeline.py:MyRetriever
 ```
 
 ```
@@ -71,12 +71,12 @@ Bottleneck for 'your adapter': retrieval — recall@5 is 0.81; 19% of questions 
 ### Commands
 
 ```sh
-stagewise generate --corpus ./docs --n 200        # just build (and inspect) the eval set
-stagewise run --corpus ./docs                     # built-in configs only, no adapter
-stagewise run --corpus ./chunks.jsonl --adapter ./p.py:R --k 10 --dump-misses misses.jsonl
+ragbisect generate --corpus ./docs --n 200        # just build (and inspect) the eval set
+ragbisect run --corpus ./docs                     # built-in configs only, no adapter
+ragbisect run --corpus ./chunks.jsonl --adapter ./p.py:R --k 10 --dump-misses misses.jsonl
 ```
 
-Everything lands in `.stagewise/`: the cache, `chunks.jsonl`, and
+Everything lands in `.ragbisect/`: the cache, `chunks.jsonl`, and
 `questions.jsonl`. Hand-check the questions. If they are bad, everything
 downstream is worthless.
 

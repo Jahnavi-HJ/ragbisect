@@ -1,6 +1,6 @@
 """Built-in candidate retrievers used as reference configs.
 
-These exist so stagewise can *measure* alternatives against the user's
+These exist so ragbisect can *measure* alternatives against the user's
 pipeline (dense-only vs dense+BM25 with reciprocal rank fusion). They are not
 meant for production use.
 """

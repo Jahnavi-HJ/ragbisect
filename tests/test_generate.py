@@ -1,9 +1,9 @@
 import json
 from pathlib import Path
 
-from stagewise.corpus import Chunk
-from stagewise.generate import Question, _clean_q, generate, has_identifier, read_questions, write_questions
-from stagewise.llm import LLM
+from ragbisect.corpus import Chunk
+from ragbisect.generate import Question, _clean_q, generate, has_identifier, read_questions, write_questions
+from ragbisect.llm import LLM
 
 
 def test_identifier_detection():
@@ -54,7 +54,7 @@ def test_generate_end_to_end_with_fake_llm(tmp_path: Path, monkeypatch):
 
 
 def test_dedupe_drops_repeated_identifiers_but_keeps_conceptual():
-    from stagewise.generate import _dedupe
+    from ragbisect.generate import _dedupe
 
     qs = [
         Question("", "What does --foo do?", "exact_lookup", ["a"], identifier="--foo"),
@@ -68,7 +68,7 @@ def test_dedupe_drops_repeated_identifiers_but_keeps_conceptual():
 
 
 def test_common_identifiers_are_dropped():
-    from stagewise.generate import _drop_common_identifiers
+    from ragbisect.generate import _drop_common_identifiers
 
     chunks = [Chunk(f"c{i}", "uv is great. " + ("UV_RARE_FLAG " if i == 0 else ""), "s") for i in range(20)]
     qs = [

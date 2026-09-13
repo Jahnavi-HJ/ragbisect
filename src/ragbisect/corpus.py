@@ -2,7 +2,7 @@
 
 Two input forms are accepted:
 
-* a directory of ``.md`` / ``.txt`` files, which stagewise parses and chunks
+* a directory of ``.md`` / ``.txt`` files, which ragbisect parses and chunks
   itself with a plain recursive splitter (this is the *baseline* being
   measured, not something we try to make good); or
 * a ``.jsonl`` file of ``{"id": ..., "text": ..., "source": ...}`` records, if

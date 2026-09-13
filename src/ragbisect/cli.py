@@ -1,7 +1,7 @@
-"""``stagewise`` command line.
+"""``ragbisect`` command line.
 
-    stagewise generate --corpus ./docs [--n 200]
-    stagewise run --corpus ./docs --adapter ./my_pipeline.py:MyRetriever [--k 5]
+    ragbisect generate --corpus ./docs [--n 200]
+    ragbisect run --corpus ./docs --adapter ./my_pipeline.py:MyRetriever [--k 5]
 
 ``run`` prints the stage table and a one-line verdict. Nothing else.
 """
@@ -48,7 +48,7 @@ class _Progress:
 
 def _add_common(p: argparse.ArgumentParser) -> None:
     p.add_argument("--corpus", required=True, help="directory of .md/.txt files, or a .jsonl of pre-chunked {id,text,source}")
-    p.add_argument("--workdir", default=".stagewise", help="where cache, chunks and questions live (default: .stagewise)")
+    p.add_argument("--workdir", default=".ragbisect", help="where cache, chunks and questions live (default: .ragbisect)")
     p.add_argument("--chunk-size", type=int, default=800, help="baseline chunker size in characters (default: 800)")
     p.add_argument("--n", type=int, default=200, help="target number of questions (default: 200)")
     p.add_argument("--seed", type=int, default=0, help="sampling seed (default: 0)")
@@ -109,7 +109,7 @@ def load_adapter(spec: str, chunks: list[Chunk]):
         path = Path(target)
         if not path.exists():
             raise SystemExit(f"adapter file not found: {path}")
-        modspec = importlib.util.spec_from_file_location(f"_stagewise_adapter_{path.stem}", path)
+        modspec = importlib.util.spec_from_file_location(f"_ragbisect_adapter_{path.stem}", path)
         assert modspec and modspec.loader
         module = importlib.util.module_from_spec(modspec)
         sys.path.insert(0, str(path.parent.resolve()))
@@ -238,8 +238,8 @@ def _dump_misses(config: ConfigResult, questions, chunk_text: dict[str, str], pa
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="stagewise", description="Stage-by-stage diagnostics for RAG pipelines.")
-    p.add_argument("--version", action="version", version=f"stagewise {__version__}")
+    p = argparse.ArgumentParser(prog="ragbisect", description="Stage-by-stage diagnostics for RAG pipelines.")
+    p.add_argument("--version", action="version", version=f"ragbisect {__version__}")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     g = sub.add_parser("generate", help="build the eval set from the corpus and stop")

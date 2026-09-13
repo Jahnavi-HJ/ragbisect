@@ -1,5 +1,5 @@
-from stagewise.corpus import Chunk
-from stagewise.retrievers import BM25Retriever, HybridRRFRetriever, tokenize
+from ragbisect.corpus import Chunk
+from ragbisect.retrievers import BM25Retriever, HybridRRFRetriever, tokenize
 
 
 def test_tokenize_keeps_identifiers():
