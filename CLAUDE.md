@@ -141,7 +141,7 @@ ragbisect run --corpus ./docs --adapter ./my_pipeline.py:MyRetriever
 
 Prints the stage table and a one-line verdict. Nothing else.
 
-### M4 — remaining query shapes
+### M4 — remaining query shapes · built 2026-09-14 (`src/ragbisect/shapes.py`)
 
 Comparison, aggregation, table. These need the structured extraction work described above, so they're meaningfully harder than M1's shapes.
 

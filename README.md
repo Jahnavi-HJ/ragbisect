@@ -58,10 +58,14 @@ Bottleneck for 'your adapter': retrieval — recall@5 is 0.81; 19% of questions 
 
 1. **Parses and chunks** your corpus (`.md`, `.txt`), or takes your own chunks
    as a JSONL of `{"id", "text", "source"}` so your IDs are the ground truth.
-2. **Generates an eval set**: for each sampled chunk, a *conceptual* question
-   and, where the chunk explains an identifier (flag, error code, env var,
-   version), an *exact-lookup* question. Ground truth is the chunk ID.
-   Cached; re-runs are free until the corpus changes.
+2. **Generates an eval set** in five shapes. *Conceptual* and *exact-lookup*
+   questions come from one chunk each via a model call. *Comparison* pairs are
+   found by lexical near-duplicate detection across documents and phrased by
+   the model; gold is both chunks. *Aggregation* questions count an identifier
+   family (TX-4401, TX-4419, …) spread over several chunks; *table* questions
+   target one cell of a pipe table. Those two are computed, not generated, and
+   cost nothing. `--shapes` selects. Cached; re-runs are free until the corpus
+   changes. Shapes a corpus cannot support are skipped and the report says why.
 3. **Scores each stage**: recall@k (retrieval), NDCG@k conditioned on a hit
    (ranking), and faithfulness via an LLM judge if your adapter also has
    `generate(query, chunk_ids) -> str` (generation).
@@ -89,7 +93,7 @@ Milestones from `CLAUDE.md`:
 - [x] M1 eval set generator (conceptual, exact lookup)
 - [x] M2 retrieval scoring; dense vs dense+BM25 RRF comparison
 - [x] M3 CLI with stage table and one-line verdict
-- [ ] M4 comparison, aggregation and table query shapes
+- [x] M4 comparison, aggregation and table query shapes
 - [ ] M5 ablation across candidate configs with a recommendation
 
 ## Known limits (read before trusting a number)

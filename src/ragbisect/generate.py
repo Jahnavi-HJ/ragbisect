@@ -143,8 +143,12 @@ def generate(
     workers: int = 8,
     progress: Callable[[int, int], None] | None = None,
     common_identifier_max_fraction: float = 0.05,
+    shapes: tuple[str, ...] = SHAPES,
 ) -> tuple[list[Question], GenerationReport]:
-    """Generate at least ``n`` questions (or as many as the corpus supports)."""
+    """Generate at least ``n`` questions of the one-chunk shapes (or as many as
+    the corpus supports), plus the structured shapes where the corpus has the
+    structure: comparison (one model call per pair), aggregation and table
+    (no model calls). ``shapes`` selects which to attempt."""
     eligible = [c for c in chunks if len(c.text) >= MIN_SOURCE_CHARS]
     rng = random.Random(seed)
     order = list(eligible)
@@ -158,8 +162,9 @@ def generate(
         n_chunks_used=0,
         n_unusable_chunks=0,
     )
-    for shape in ("comparison", "aggregation", "table"):
-        report.skipped_shapes[shape] = "not implemented in this version (planned: M4)"
+    for shape in SHAPES:
+        if shape not in shapes:
+            report.skipped_shapes[shape] = "not requested"
 
     results: dict[int, tuple[list[Question], bool] | None] = {}
     questions: list[Question] = []
@@ -167,7 +172,8 @@ def generate(
     done = 0
     # Work in batches so we stop once we have enough, keeping cost proportional to n.
     batch = max(workers * 4, 16)
-    while len(questions) < n and cursor < len(order):
+    one_chunk_shapes = {"conceptual", "exact_lookup"} & set(shapes)
+    while one_chunk_shapes and len(questions) < n and cursor < len(order):
         idx = list(range(cursor, min(cursor + batch, len(order))))
         cursor += len(idx)
         with ThreadPoolExecutor(max_workers=workers) as pool:
@@ -197,13 +203,37 @@ def generate(
                 report.n_unusable_chunks += 1
             questions.extend(qs)
 
+    questions = [q for q in questions if q.shape in shapes]
     questions = _drop_common_identifiers(questions, chunks, max_fraction=common_identifier_max_fraction)
     questions = _dedupe(questions)
+
+    # Structured shapes: ground truth from corpus structure.
+    from . import shapes as _shapes
+
+    budget = max(8, n // 8)
+    if "comparison" in shapes:
+        qs, why = _shapes.generate_comparisons(chunks, llm, max_pairs=budget, seed=seed)
+        questions.extend(qs)
+        if why:
+            report.skipped_shapes["comparison"] = why
+        elif not qs:
+            report.skipped_shapes["comparison"] = "candidate pairs found but the model judged none genuinely comparable"
+    if "aggregation" in shapes:
+        qs, why = _shapes.generate_aggregations(chunks, max_questions=max(4, n // 10), seed=seed)
+        questions.extend(qs)
+        if why:
+            report.skipped_shapes["aggregation"] = why
+    if "table" in shapes:
+        qs, why = _shapes.generate_table_questions(chunks, max_questions=budget, seed=seed)
+        questions.extend(qs)
+        if why:
+            report.skipped_shapes["table"] = why
+
     for i, q in enumerate(questions, 1):
         q.id = f"q{i:04d}"
-    for shape in ("conceptual", "exact_lookup"):
+    for shape in SHAPES:
         report.counts[shape] = sum(1 for q in questions if q.shape == shape)
-    if report.counts["exact_lookup"] == 0:
+    if report.counts["exact_lookup"] == 0 and "exact_lookup" in shapes:
         report.skipped_shapes["exact_lookup"] = "corpus has no identifier-bearing chunks the model could turn into lookups"
     return questions, report
 

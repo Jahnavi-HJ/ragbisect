@@ -55,6 +55,7 @@ def _add_common(p: argparse.ArgumentParser) -> None:
     p.add_argument("--model", default=DEFAULT_MODEL, help=f"provider:model for generation and judging (default: {DEFAULT_MODEL})")
     p.add_argument("--embed-model", default=DEFAULT_EMBED_MODEL, help=f"embedding model for the built-in dense config (default: {DEFAULT_EMBED_MODEL})")
     p.add_argument("--workers", type=int, default=8, help="parallel LLM calls during generation (default: 8)")
+    p.add_argument("--shapes", default="all", help="comma-separated question shapes to generate: conceptual,exact_lookup,comparison,aggregation,table (default: all)")
 
 
 def _load_chunks(args: argparse.Namespace) -> list[Chunk]:
@@ -65,7 +66,8 @@ def _load_chunks(args: argparse.Namespace) -> list[Chunk]:
 
 
 def _questions_path(args: argparse.Namespace, fingerprint: str) -> Path:
-    return Path(args.workdir) / f"questions-{fingerprint}-n{args.n}-s{args.seed}.jsonl"
+    tag = "" if getattr(args, "shapes", "all") in ("all", "") else "-" + "+".join(s.strip() for s in args.shapes.split(","))
+    return Path(args.workdir) / f"questions-{fingerprint}-n{args.n}-s{args.seed}{tag}.jsonl"
 
 
 def _ensure_questions(args: argparse.Namespace, chunks: list[Chunk], llm: LLM):
@@ -83,7 +85,13 @@ def _ensure_questions(args: argparse.Namespace, chunks: list[Chunk], llm: LLM):
         _eprint(f"using cached eval set {qpath} ({len(questions)} questions)")
         return questions, report, qpath
     _eprint(f"generating eval set from {len(chunks)} chunks (target {args.n} questions)")
-    questions, report = generate(chunks, llm, n=args.n, seed=args.seed, workers=args.workers, progress=_Progress("generate"))
+    from .generate import SHAPES
+
+    shapes = SHAPES if args.shapes in ("all", "") else tuple(s.strip() for s in args.shapes.split(","))
+    unknown = [s for s in shapes if s not in SHAPES]
+    if unknown:
+        raise SystemExit(f"unknown shape(s) {unknown}; choose from {', '.join(SHAPES)}")
+    questions, report = generate(chunks, llm, n=args.n, seed=args.seed, workers=args.workers, progress=_Progress("generate"), shapes=shapes)
     if not questions:
         _eprint(generation_notes(report))
         raise LLMError("no questions could be generated; not caching an empty eval set")
@@ -195,6 +203,10 @@ def cmd_run(args: argparse.Namespace) -> int:
         _eprint(f"judging generation on {min(args.gen_sample, len(primary.results))} answers")
         score_generation(primary, adapter, questions, chunk_text, llm, sample=args.gen_sample)
 
+    empty = [c for c in configs if not c.results]
+    for c in empty:
+        _eprint(f"note: '{c.name}' produced no results ({c.errors} errors, e.g. no embedding credits); dropped from the table")
+    configs = [c for c in configs if c.results]
     if not configs:
         _eprint("nothing to run: pass --adapter or drop --no-baselines")
         return 2
