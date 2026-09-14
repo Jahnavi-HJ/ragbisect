@@ -1,5 +1,7 @@
 # ragbisect
 
+**Website:** https://mi2arun.github.io/contextpull/ragbisect.html
+
 Bisect a RAG pipeline to find the broken stage. Stage-by-stage diagnostics for RAG pipelines, and the benchmark harness for [ContextPull](https://github.com/mi2arun/contextpull).
 
 ragbisect (formerly stagewise) and ContextPull are one project in two packages, kept apart on purpose. ContextPull is the retrieval server; ragbisect is the neutral instrument that measures it against bm25, dense and hybrid pipelines on the same self-built eval set. ragbisect has no dependency on ContextPull and works on any pipeline you already have.
