@@ -84,3 +84,20 @@ def test_generate_produces_all_five_shapes_with_mock_model(tmp_path, monkeypatch
     # shapes selection
     qs2, report2 = generate(big, llm, n=8, seed=0, workers=2, shapes=("table",))
     assert {q.shape for q in qs2} == {"table"} and report2.skipped_shapes["conceptual"] == "not requested"
+
+
+def test_table_questions_skip_keys_repeated_across_tables():
+    a = Chunk("t.md#0", "## Dates\n\n| Constraint | JSON Schema |\n|---|---|\n| gt | exclusiveMinimum |\n| lt | exclusiveMaximum |\n| unique_a | onlyhere |", "t.md")
+    b = Chunk("t.md#5", "## Times\n\n| Constraint | JSON Schema |\n|---|---|\n| gt | exclusiveMinimum |\n| lt | exclusiveMaximum |", "t.md")
+    qs, why = generate_table_questions([a, b], max_questions=6, seed=0)
+    assert why is None and [q.q for q in qs] == ["What is the JSON Schema for unique_a?"]
+    qs, why = generate_table_questions([a, Chunk("u.md#0", b.text.replace("Times", "Other"), "u.md")], max_questions=6, seed=0)
+    assert [q.answer for q in qs] == ["onlyhere"]
+    only_dupes = [Chunk("x.md#0", b.text, "x.md"), Chunk("y.md#0", b.text, "y.md")]
+    assert generate_table_questions(only_dupes, 4, 0)[1].startswith("tables found, but every row key repeats")
+
+
+def test_table_keys_drop_markdown_link_syntax():
+    c = Chunk("e.md#0", "## Errors\n\n| Field | Description |\n|---|---|\n| [loc][pydantic_core.ErrorDetails.loc] | The error location |\n| [msg](https://x) | The message |\n| `type` | The type |", "e.md")
+    qs, _ = generate_table_questions([c], max_questions=6, seed=0)
+    assert {q.q for q in qs} <= {"What is the Description for loc?", "What is the Description for msg?", "What is the Description for type?"}

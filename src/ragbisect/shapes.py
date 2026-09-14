@@ -230,17 +230,31 @@ def generate_table_questions(chunks: list[Chunk], max_questions: int, seed: int)
     spans = find_tables(chunks)
     if not spans:
         return [], "no pipe tables with a header and at least two rows"
+    
     rng = random.Random(seed)
     out: list[Question] = []
+    # A row key that heads rows in more than one table (the same constraints table
+    # repeated per type, say) makes the cell question answerable from several
+    # sections; the single gold would be arbitrary. Only unique keys are asked about.
+    key_tables: dict[str, set[str]] = defaultdict(set)
+    for sp in spans:
+        for r in sp.rows:
+            key_tables[" ".join(r[0].replace("`", "").replace("**", "").split()).lower()].add(sp.chunk.id)
     per_table = max(1, max_questions // len(spans))
     for span in spans:
-        picks = rng.sample(span.rows, min(per_table, len(span.rows)))
+        unique_rows = [r for r in span.rows if len(key_tables[" ".join(r[0].replace("`", "").replace("**", "").split()).lower()]) == 1]
+        if not unique_rows:
+            continue
+        picks = rng.sample(unique_rows, min(per_table, len(unique_rows)))
         for row in picks:
             cols = [i for i in range(1, len(span.header)) if row[i] and span.header[i]]
             if not cols:
                 continue
             col = rng.choice(cols)
-            clean = lambda x: " ".join(x.replace("`", "").replace("**", "").split())
+            def clean(x: str) -> str:
+                x = re.sub(r"\[([^\]]+)\]\[[^\]]*\]", r"\1", x)   # [text][ref]  -> text
+                x = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", x)   # [text](url)  -> text
+                return " ".join(x.replace("`", "").replace("**", "").split())
             key, col_name, value = clean(row[0]), clean(span.header[col]), clean(row[col])
             if not key or not value or len(key) > 60:
                 continue
@@ -249,4 +263,6 @@ def generate_table_questions(chunks: list[Chunk], max_questions: int, seed: int)
             out.append(Question("", q, "table", gold, value, span.chunk.source))
             if len(out) >= max_questions:
                 return out, None
+    if not out:
+        return [], "tables found, but every row key repeats across tables, so no cell has a single answering section"
     return out, None
