@@ -15,7 +15,7 @@ from typing import Protocol, runtime_checkable
 
 from .corpus import Chunk
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 
 @runtime_checkable
