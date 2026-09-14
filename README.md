@@ -16,7 +16,7 @@ It is a measuring instrument, not a RAG framework. Zero runtime dependencies.
 ## Install
 
 ```sh
-uv add --dev ragbisect      # or: pip install ragbisect   (PyPI: ragbisect 0.1.0)
+uv add --dev ragbisect      # or: pip install ragbisect   (PyPI: ragbisect 0.2.0)
 export OPENAI_API_KEY=...   # used for question generation, judging and the built-in dense config
 ```
 
