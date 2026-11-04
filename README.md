@@ -107,9 +107,16 @@ Milestones from `CLAUDE.md`:
   **lower bound**. Repeated identifiers are deduped and very common ones
   (present in >5% of chunks) are rejected, which reduces but does not remove
   the effect. `--dump-misses` lets you see for yourself.
-- **Two of five query shapes.** Comparison, aggregation and table questions
-  are not generated yet, and those are the shapes naive RAG fails on hardest.
-- **No PDF parsing.** `.md` and `.txt` only.
+- **Structured shapes depend on the corpus.** Comparison needs near-duplicate
+  chunks across documents (versioned docs); aggregation needs an identifier
+  family with digits (TX-4401, TX-4419, …), so name-only families like
+  pydantic's error types are not counted yet; table needs pipe tables with row
+  keys unique across tables. Many doc corpora support only a handful of these
+  questions (the `uv` docs: 5, all table). Shapes with too few candidates are
+  skipped and the report says so.
+- **No PDF or Office parsing.** `.md` and `.txt` only. To evaluate other
+  formats, chunk them elsewhere and pass a `.jsonl` (for example
+  `contextpull export-chunks`).
 - **Generation scoring is thin** by design: one LLM judge on a sample.
 - **Baseline chunker is the baseline.** If you already chunk, pass your own
   `.jsonl` so ground truth uses your IDs.
