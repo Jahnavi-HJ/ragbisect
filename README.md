@@ -88,6 +88,29 @@ Everything lands in `.ragbisect/`: the cache, `chunks.jsonl`, and
 `questions.jsonl`. Hand-check the questions. If they are bad, everything
 downstream is worthless.
 
+### Evaluate PDF and Office corpora
+
+ragbisect natively parses `.md` and `.txt` files only. Built-in parsers for PDF
+and Office formats are out of scope; instead, pre-chunk those documents with an
+external tool and provide the resulting JSONL. Each line must contain a chunk
+ID, its text, and its source, for example:
+
+```json
+{"id":"manual-1:chunk-0","text":"Keep the R-40 between 2°C and 8°C.","source":"manual-1.pdf"}
+```
+
+For PDF, DOCX, XLSX, and PPTX files, [ContextPull](https://github.com/mi2arun/contextpull)
+can ingest the documents and export chunks in the required format:
+
+```sh
+contextpull ingest path/to/docs/
+contextpull export-chunks --format jsonl -o pre_chunked_data.jsonl
+ragbisect evaluate --input pre_chunked_data.jsonl
+```
+
+The exported chunk IDs become the ground truth for evaluation; ragbisect does
+not parse the original PDF or Office files.
+
 ## Status
 
 Milestones from `CLAUDE.md`:
@@ -114,9 +137,8 @@ Milestones from `CLAUDE.md`:
   keys unique across tables. Many doc corpora support only a handful of these
   questions (the `uv` docs: 5, all table). Shapes with too few candidates are
   skipped and the report says so.
-- **No PDF or Office parsing.** `.md` and `.txt` only. To evaluate other
-  formats, chunk them elsewhere and pass a `.jsonl` (for example
-  `contextpull export-chunks`).
+- **No PDF or Office parsing.** Native parsing is limited to `.md` and `.txt`;
+  use the pre-chunked JSONL workflow above for other formats.
 - **Generation scoring is thin** by design: one LLM judge on a sample.
 - **Baseline chunker is the baseline.** If you already chunk, pass your own
   `.jsonl` so ground truth uses your IDs.
